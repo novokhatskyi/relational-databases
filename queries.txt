@@ -1,0 +1,121 @@
+use LibraryManagement
+
+create table authors
+(
+author_id INT primary key auto_increment,
+author_name varchar(42)
+);
+
+create table genres
+(
+genre_id INT primary key auto_increment,
+genre_name varchar(42)
+);
+
+create table books
+(
+book_id INT primary key auto_increment,
+title varchar(42),
+publication_year YEAR,
+author_id int not null,
+foreign key(author_id) references authors(author_id),
+genre_id int not null,
+foreign key(genre_id) references genres(genre_id)
+);
+
+create table users
+(
+user_id INT primary key auto_increment,
+user_name varchar(42),
+email varchar(100)
+);
+
+
+create table borrowed_books
+(
+borrow_id INT primary key auto_increment,
+book_id int,
+foreign key(book_id) references books(book_id),
+user_id int,
+foreign key(user_id) references users(user_id),
+borrow_date date,
+return_date date
+);
+
+-- add values
+
+insert INTO authors(author_name)
+values
+('Stephen King'),
+('Benjamin Graham'),
+('Economics: The User’s Guide')
+
+UPDATE authors
+set
+author_name = 'Ha-Joon Chang'
+WHERE 
+author_name = 'Economics: The User’s Guide'
+
+insert into genres(genre_name)
+VALUES 
+('Horror'),
+('Finance'),
+('Economics')
+
+insert into books(title, publication_year, author_id, genre_id)
+values
+('The Shining', 1977, 1, 1),
+('The Intelligent Investor', 1949, 2, 2),
+('Economics: The User’s Guide', 2014, 3, 3)
+
+insert into users(user_name, email)
+values
+('Mike', 'mike_michigan@example.com'),
+('Bob', 'bob_mcgill@example.com')
+
+insert into borrowed_books(book_id, user_id, borrow_date, return_date)
+values
+(1, 2, '2026-02-01', '2026-02-10'),
+(3, 2, '2026-02-05', NULL),
+(2, 1, '2026-02-07', '2026-02-20')
+
+select od.id, od.quantity, o.date, c.name as customers_name, 
+c.city, s.name as shiper_name, e.last_name, p.name as prod_name, 
+p.price, cat.name as cat_name, sup.country
+from order_details od
+join orders o on od.order_id = o.id
+join products p on od.product_id = p.id
+join shippers s on o.shipper_id = s.id
+join customers c on o.customer_id = c.id 
+join employees e on o.employee_id = e.employee_id 
+join categories cat on p.category_id = cat.id 
+join suppliers sup on p.supplier_id  = sup.id 
+where o.employee_id > 3 and o.employee_id <=10
+
+
+-- select od.id, od.quantity, o.date, c.name as customers_name, 
+-- c.city, s.name as shiper_name, e.last_name, p.name as prod_name, 
+-- p.price, cat.name as cat_name, sup.country
+select cat.name as name_of_cat, count(cat.name) as count_cat, avg(od.quantity ) as average
+from order_details od
+join orders o on od.order_id = o.id
+join products p on od.product_id = p.id
+join shippers s on o.shipper_id = s.id
+join customers c on o.customer_id = c.id 
+join employees e on o.employee_id = e.employee_id 
+join categories cat on p.category_id = cat.id 
+join suppliers sup on p.supplier_id  = sup.id
+GROUP by name_of_cat 
+HAVING  average > 21
+order by count_cat DESC
+LIMIT 4
+offset 1
+
+
+-- LEFT JOIN не додає нові рядки сам по собі. 
+-- Він лише зберігає рядки з лівої таблиці, які INNER JOIN би викинув через відсутність пари.
+-- Судячи з того, що COUNT не змінився, роблю висновок:
+-- -для кожного od.order_id існує рядок в orders
+-- -для кожного od.product_id існує рядок в products
+-- - і так даліпо ланцюжку
+
