@@ -1,0 +1,169 @@
+use pandemic
+
+SELECT count(*) from infectious_cases ic 
+
+SELECT distinct Number_smallpox from infectious_cases ic 
+
+SELECT count(distinct entity) from infectious_cases ic 
+
+SELECT count(distinct code) from infectious_cases ic 
+
+
+select count(*) as null_count
+from infectious_cases ic 
+where ic.Number_rabies is NULL;
+
+select count(*) as null_count
+from infectious_cases ic 
+where TRIM(Number_rabies) = '';
+
+SELECT COUNT(*) AS not_numeric_count
+FROM infectious_cases
+WHERE Number_smallpox IS NOT NULL
+  AND TRIM(Number_smallpox) <> ''
+  AND TRIM(Number_smallpox) NOT REGEXP '^[0-9]+(\\.[0-9]+)?$';
+
+update infectious_cases ic 
+set Number_smallpox = NULL
+where TRIM(Number_smallpox) = '';
+
+
+create table entities(
+	id int primary key auto_increment,
+	entity varchar(50) UNIQUE not null,
+	code varchar (9) 
+);
+
+insert into entities (entity, code)
+SELECT distinct entity, code 
+from infectious_cases ic 
+
+alter table infectious_cases 
+add entity_id int;
+
+update infectious_cases ic
+join entities e 
+on ic.Entity = e.entity 
+set ic.entity_id = e.id
+
+
+select count(*) as null_count
+from infectious_cases ic 
+where ic.entity_id is NULL;
+
+select count(*) as null_count
+from infectious_cases ic 
+where TRIM(entity_id) = '';
+
+ALTER TABLE pandemic.infectious_cases ADD CONSTRAINT infectious_cases_entities_FK FOREIGN KEY (entity_id) REFERENCES pandemic.entities(id);
+ALTER TABLE pandemic.infectious_cases DROP COLUMN Entity;
+ALTER TABLE pandemic.infectious_cases DROP COLUMN Code;
+
+-- 3. Проаналізуйте дані:
+-- Для кожної унікальної комбінації Entity та Code або їх id порахуйте середнє, мінімальне, максимальне значення та суму для атрибута Number_rabies.
+-- Результат відсортуйте за порахованим середнім значенням у порядку спадання.
+-- Оберіть тільки 10 рядків для виведення на екран.
+
+select count(*) as null_count
+from infectious_cases ic 
+where TRIM(Number_rabies) = '';
+
+select 
+	e.entity,
+	e.code,
+	round(min(ic.Number_rabies), 2) as min_rabies,
+	round(avg(ic.Number_rabies), 2) as mean_rabies,
+	round(max(ic.Number_rabies), 2) as max_rabies,
+	round(SUM(ic.Number_rabies), 2) as sum_rabies
+from infectious_cases ic 
+JOIN entities e
+on e.id = ic.entity_id 
+group by e.entity, e.code
+order by mean_rabies desc
+limit 10
+
+-- 4. Побудуйте колонку різниці в роках.
+-- Для оригінальної або нормованої таблиці для колонки Year побудуйте з використанням вбудованих SQL-функцій:
+-- атрибут, що створює дату першого січня відповідного року,
+-- атрибут, що дорівнює поточній даті,
+-- атрибут, що дорівнює різниці в роках двох вищезгаданих колонок.
+
+alter table infectious_cases 
+add date_year date;
+
+update infectious_cases ic
+set ic.date_year = MAKEDATE(ic.`Year` , 1);
+
+alter table infectious_cases 
+add column now_date date,
+add column year_diff int
+
+update infectious_cases ic
+set 
+	ic.now_date = CURDATE(),
+	year_diff = TIMESTAMPDIFF(YEAR, ic.date_year, ic.now_date)
+	
+select
+	e.entity,
+	ic.`Year`,
+	ic.date_year,
+	ic.now_date,
+	ic.year_diff 
+from infectious_cases ic 
+JOIN entities e 
+
+-- 5. Побудуйте власну функцію.
+
+-- Створіть і використайте функцію, що будує такий же атрибут, як і в попередньому завданні: 
+-- функція має приймати на вхід значення року, а повертати різницю в роках між поточною датою та датою, 
+-- створеною з атрибута року (1996 рік → ‘1996-01-01’).
+
+delimiter //
+
+create function CalculateYearDiff (year_infection int)
+returns INT
+deterministic
+begin
+	RETURN TIMESTAMPDIFF(YEAR, MAKEDATE(year_infection, 1), CURDATE());
+end //
+
+delimiter ;
+
+
+SELECT CalculateYearDiff(1996)
+
+SELECT 
+	`Year`,
+	ic.year_diff,
+	CalculateYearDiff(`Year`) AS func_year_diff
+from infectious_cases ic 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
